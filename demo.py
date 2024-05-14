@@ -39,9 +39,9 @@ predict_token(
 
 print('test prompt', test_prompt)
 
-generate_outputs(test_prompt,mt,)
-
-
+output = generate_outputs(test_prompt,mt,)
+print('output', output)
+print('end of script')
 ### CASPER ###
 
 
