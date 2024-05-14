@@ -68,9 +68,10 @@ def trace_with_patch_layer(
             return x
 
         if layer == layers[0]:
-            print('inter_results', inter_results)
+            print('inter_results', x)
+            print('inter_results - hidden states', x[0])
             inter_results["hidden_states"] = x[0].cpu()
-            print('inter_results_attention_mask', inter_results['attention_mask'])
+           
             inter_results["attention_mask"] = x[1][0].cpu()
             inter_results["position_ids"] = x[1][1].cpu()
             return x
