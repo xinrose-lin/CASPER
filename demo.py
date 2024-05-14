@@ -47,46 +47,71 @@ print('end of script')
 
 ### functions: casper analysis for layer 
 
-# def trace_with_patch_layer(
-#     model,  # The model
-#     inp,  # A set of inputs
-#     states_to_patch,  # A list of (token index, layername) triples to restore
-#     answers_t,  # Answer probabilities to collect  
-# ):
-#     prng = np.random.RandomState(1)  # For reproducibility, use pseudorandom noise
-#     layers = [states_to_patch[0], states_to_patch[1]]
+def trace_with_patch_layer(
+    model,  # The model
+    inp,  # A set of inputs
+    states_to_patch,  # A list of (token index, layername) triples to restore
+    answers_t,  # Answer probabilities to collect  
+):
+    prng = np.random.RandomState(1)  # For reproducibility, use pseudorandom noise
+    layers = [states_to_patch[0], states_to_patch[1]]
 
-#     # Create dictionary to store intermediate results
-#     inter_results = {}
+    # Create dictionary to store intermediate results
+    inter_results = {}
 
-#     def untuple(x):
-#         return x[0] if isinstance(x, tuple) else x
+    def untuple(x):
+        return x[0] if isinstance(x, tuple) else x
 
-#     # Define the model-patching rule.
-#     def patch_rep(x, layer):
-#         if layer not in layers:
-#             return x
+    # Define the model-patching rule.
+    def patch_rep(x, layer):
+        if layer not in layers:
+            return x
 
-#         if layer == layers[0]:
-#             inter_results["hidden_states"] = x[0].cpu()
-#             inter_results["attention_mask"] = x[1][0].cpu()
-#             inter_results["position_ids"] = x[1][1].cpu()
-#             return x
-#         elif layer == layers[1]:
-#             short_cut_1 = inter_results["hidden_states"].cuda()
-#             short_cut_2_1 = inter_results["attention_mask"].cuda()
-#             short_cut_2_2 = inter_results["position_ids"].cuda()
-#             short_cut_2 = (short_cut_2_1, short_cut_2_2)
-#             short_cut = (short_cut_1, short_cut_2)
-#             return short_cut
+        if layer == layers[0]:
+            inter_results["hidden_states"] = x[0].cpu()
+            inter_results["attention_mask"] = x[1][0].cpu()
+            inter_results["position_ids"] = x[1][1].cpu()
+            return x
+        elif layer == layers[1]:
+            short_cut_1 = inter_results["hidden_states"].cuda()
+            short_cut_2_1 = inter_results["attention_mask"].cuda()
+            short_cut_2_2 = inter_results["position_ids"].cuda()
+            short_cut_2 = (short_cut_2_1, short_cut_2_2)
+            short_cut = (short_cut_1, short_cut_2)
+            return short_cut
             
-#     with torch.no_grad(), nethook.TraceDict(
-#         model,
-#         layers,
-#         edit_output=patch_rep,
-#     ) as td:
-#         outputs_exp = model(**inp)
+    with torch.no_grad(), nethook.TraceDict(
+        model,
+        layers,
+        edit_output=patch_rep,
+    ) as td:
+        outputs_exp = model(**inp)
 
-#     probs = torch.softmax(outputs_exp.logits[1:, -1, :], dim=1).mean(dim=0)[answers_t]
+    probs = torch.softmax(outputs_exp.logits[1:, -1, :], dim=1).mean(dim=0)[answers_t]
 
-#     return probs
+    return probs
+
+
+def analyse_based_on_layer(prompt,):
+    inp = make_inputs(mt.tokenizer,[prompt]*2)
+    with torch.no_grad():
+        answer_t, logits = [d[0] for d in predict_from_input(mt.model, inp)]
+    [answer] = decode_tokens(mt.tokenizer, [answer_t])
+    print(answer)
+    model = mt.model
+    result_prob = []
+    for layer in range(mt.num_layers-1):
+        layers = [layername(model, layer),layername(model, layer + 1)]
+        print(layers)
+        prob =  trace_with_patch_layer(model, inp, layers,answer_t)
+        result_prob.append(prob)
+     # Convert tensors to a list of numbers
+    data_on_cpu = [abs(x.item() - logits.item()) for x in result_prob]
+    # Create a list of indices for x-axis
+        
+    return logits.item() ,data_on_cpu
+
+logits, layerAIE = analyse_based_on_layer(test_prompt)
+
+print('logits', logits)
+print('layerAIE', layerAIE)
