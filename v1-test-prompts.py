@@ -28,13 +28,47 @@ adv_prompts = [
 ]
 
 ## ### function for next token logits 
-def predict_from_input(model, inp):
+def predict_next_token(model, inp):
     out = model(**inp)["logits"]
     probs = torch.softmax(out[:, -1], dim=1)
     p, preds = torch.max(probs, dim=1)
     return preds, p
 
 ### function for intervened prompt logits / ie score
+def prompt_tokens_ie_score(model, tokenizer, tokenized_prompt, intervene_token): 
+    """
+        intervene token is used to replace each token of the input prompt
+
+        returns list of logits of length input prompt based on each edited input prompts
+    """
+    ## token to be changed to 
+    intervened_token_num = tokenizer(intervene_token)
+
+    # generate original logits
+    # tokenized_inp = make_inputs(mt.tokenizer,[prompt], device="mps")
+    pred, p = predict_next_token(model, tokenized_prompt)
+    ref_prob = (pred, p)
+    print('ref')
+
+    prompt_logits_list = []
+    for i in range(len(tokenized_prompt['input_ids'].flatten())):
+
+        # tokenized_inp = make_inputs(mt.tokenizer,[prompt], device="cuda")
+
+        tokenized_prompt['input_ids'].flatten()[i] = intervened_token_num['input_ids'][0]
+        
+        new_inp = tokenized_prompt
+
+        print('new prompt', [tokenizer.decode(c) for c in new_inp])
+
+        preds, p = predict_next_token(model, new_inp)
+        prompt_logits_list.append((preds, p))
+        print((pred, p))
+
+    ## prompt indirect effect list 
+    prompt_ie_list = [abs(ref_prob[1].item() - x[1].item()) for x in prompt_logits_list]
+
+    return prompt_ie_list
 
 
 ## load model 
@@ -53,19 +87,28 @@ for i in range(len(harmful_prompts)):
     inputs = tokenizer(harmful_prompts[i], return_tensors="pt")
     inputs.to("cuda")
 
-    ## logits 
-    pred, p = predict_from_input(model, inputs)
-
     ## response
     outputs = model.generate(**inputs)
     generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
     print(f'Harmful prompt {i}: {harmful_prompts[i]}, ', generated_text)
-    print('pred, p', (pred, p))
-
-    harmful_responses[harmful_prompts[i]] = generated_text
     
-    with open('harmful_data.json', 'w') as json_file:
+    ## original logits
+    # pred, p = predict_next_token(model, inputs)
+    # print('original pred, p', (pred, p))
+    
+    ## prompt logits with intervened token
+    prompt_tokens_ie_list = prompt_tokens_ie_score(model, tokenizer, inputs, '-')
+    
+    print(prompt_tokens_ie_list)
+
+    harmful_responses[harmful_prompts[i]]['response'] = generated_text
+    harmful_responses[harmful_prompts[i]]['prompt_ie_score'] = prompt_tokens_ie_score
+    
+
+    with open('harmful_data_w_ie_score.json', 'w') as json_file:
         json.dump(harmful_responses, json_file, indent=4)   
+        
+    break 
 
     print('saved response')
 
