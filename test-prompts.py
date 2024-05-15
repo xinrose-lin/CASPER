@@ -44,7 +44,7 @@ for i in range(len(harmful_prompts)):
     
     inputs = tokenizer(harmful_prompts[i], return_tensors="pt")
     inputs.to("cuda")
-
+    
     outputs = model.generate(**inputs)
     generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
     print(f'Harmful prompt {i}: {harmful_prompts[i]}', generated_text)
