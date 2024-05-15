@@ -59,7 +59,7 @@ def prompt_tokens_ie_score(model, tokenizer, tokenized_prompt, intervene_token):
         
         new_inp = tokenized_prompt
 
-        print('new prompt', [tokenizer.decode(c) for c in new_inp])
+        print('new prompt', [tokenizer.decode(c) for c in new_inp['input_ids']])
 
         preds, p = predict_next_token(model, new_inp)
         prompt_logits_list.append((preds, p))
@@ -107,7 +107,7 @@ for i in range(len(harmful_prompts)):
 
     with open('harmful_data_w_ie_score.json', 'w') as json_file:
         json.dump(harmful_responses, json_file, indent=4)   
-        
+
     break 
 
     print('saved response')
