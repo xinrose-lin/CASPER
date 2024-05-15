@@ -1,4 +1,5 @@
 ## VERSION: without system prompt
+## get prompt ie score 
 
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
@@ -42,12 +43,12 @@ def prompt_tokens_ie_score(model, tokenizer, prompt, intervene_token):
         returns list of logits of length input prompt based on each edited input prompts
     """
     ## token to be changed to 
-    intervened_token_num = tokenizer(intervene_token)
+    intervened_token_num = tokenizer(intervene_token)['input_ids'][0]
 
     # generate original logits
 
     ## tokenise
-    inputs = tokenizer(prompt)
+    inputs = tokenizer(prompt, return_tensors="pt")
     # tokenized_inp = make_inputs(mt.tokenizer,[prompt], device="mps")
     pred, p = predict_next_token(model, inputs)
     ref_prob = (pred, p)
@@ -59,7 +60,7 @@ def prompt_tokens_ie_score(model, tokenizer, prompt, intervene_token):
         inputs = tokenizer(prompt, return_tensors="pt")
         # tokenized_inp = make_inputs(tokenizer,[prompt], device="cuda")
 
-        inputs['input_ids'].flatten()[i] = intervened_token_num['input_ids'][0]
+        inputs['input_ids'].flatten()[i] = intervened_token_num
         
         new_inp = inputs
 
@@ -101,7 +102,7 @@ for i in range(len(harmful_prompts)):
     # print('original pred, p', (pred, p))
     
     ## prompt logits with intervened token
-    prompt_tokens_ie_list = prompt_tokens_ie_score(model, tokenizer, inputs, '-')
+    prompt_tokens_ie_list = prompt_tokens_ie_score(model, tokenizer, harmful_prompts[i], '-')
     
     print(prompt_tokens_ie_list)
 
