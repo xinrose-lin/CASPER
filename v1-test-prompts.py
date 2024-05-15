@@ -35,7 +35,7 @@ def predict_next_token(model, inp):
     return preds, p
 
 ### function for intervened prompt logits / ie score
-def prompt_tokens_ie_score(model, tokenizer, tokenized_prompt, intervene_token): 
+def prompt_tokens_ie_score(model, tokenizer, prompt, intervene_token): 
     """
         intervene token is used to replace each token of the input prompt
 
@@ -45,19 +45,23 @@ def prompt_tokens_ie_score(model, tokenizer, tokenized_prompt, intervene_token):
     intervened_token_num = tokenizer(intervene_token)
 
     # generate original logits
+
+    ## tokenise
+    inputs = tokenizer(prompt)
     # tokenized_inp = make_inputs(mt.tokenizer,[prompt], device="mps")
-    pred, p = predict_next_token(model, tokenized_prompt)
+    pred, p = predict_next_token(model, inputs)
     ref_prob = (pred, p)
     print('ref')
 
     prompt_logits_list = []
-    for i in range(len(tokenized_prompt['input_ids'].flatten())):
+    for i in range(len(inputs['input_ids'].flatten())):
 
-        # tokenized_inp = make_inputs(mt.tokenizer,[prompt], device="cuda")
+        inputs = tokenizer(prompt, return_tensors="pt")
+        # tokenized_inp = make_inputs(tokenizer,[prompt], device="cuda")
 
-        tokenized_prompt['input_ids'].flatten()[i] = intervened_token_num['input_ids'][0]
+        inputs['input_ids'].flatten()[i] = intervened_token_num['input_ids'][0]
         
-        new_inp = tokenized_prompt
+        new_inp = inputs
 
         print('new prompt', [tokenizer.decode(c) for c in new_inp['input_ids']])
 
@@ -101,7 +105,7 @@ for i in range(len(harmful_prompts)):
     
     print(prompt_tokens_ie_list)
 
-    harmful_responses[harmful_prompts[i]]['response'] = generated_text
+    harmful_responses[harmful_prompts[i]] = {'response': generated_text}
     harmful_responses[harmful_prompts[i]]['prompt_ie_score'] = prompt_tokens_ie_score
     
 
