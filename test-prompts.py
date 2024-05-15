@@ -5,8 +5,10 @@
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 
-harmful_responses = []
-adv_responses = []
+import json
+
+harmful_responses = {}
+adv_responses = {}
 
 ## sample data
 harmful_prompts = [
@@ -45,6 +47,13 @@ for i in range(len(harmful_prompts)):
     generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
     print(f'Harmful prompt {i}: {harmful_prompts[i]}', generated_text)
 
+    harmful_responses[harmful_prompts[i]] = generated_text
+    
+    with open('harmful_data.json', 'w') as json_file:
+        json.dump(harmful_responses, json_file, indent=4)   
+
+    print('saved response')
+
     inputs = tokenizer(adv_prompts[i], return_tensors="pt")
     inputs.to("cuda")
 
@@ -52,6 +61,11 @@ for i in range(len(harmful_prompts)):
     generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
     print(f'Adversarial prompt {i}: {adv_prompts[i]}', generated_text)
 
-    break
+    adv_responses[adv_prompts[i]] = generated_text
 
+    with open('adv_data.json', 'w') as json_file:
+        json.dump(adv_responses, json_file, indent=4)    
+    
+    print('saved response')
+    
 
