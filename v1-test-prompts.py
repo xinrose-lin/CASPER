@@ -49,15 +49,17 @@ def prompt_tokens_ie_score(model, tokenizer, prompt, intervene_token):
 
     ## tokenise
     inputs = tokenizer(prompt, return_tensors="pt")
+    inputs.to('cuda')
     # tokenized_inp = make_inputs(mt.tokenizer,[prompt], device="mps")
     pred, p = predict_next_token(model, inputs)
     ref_prob = (pred, p)
-    print('ref')
+    print('ref', (pred, p))
 
     prompt_logits_list = []
     for i in range(len(inputs['input_ids'].flatten())):
 
-        inputs = tokenizer(prompt, return_tensors="pt")
+        inputs = tokenizer(harmful_prompts[i], return_tensors="pt")
+        inputs.to("cuda")
         # tokenized_inp = make_inputs(tokenizer,[prompt], device="cuda")
 
         inputs['input_ids'].flatten()[i] = intervened_token_num
