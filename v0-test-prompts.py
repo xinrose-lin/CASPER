@@ -1,3 +1,5 @@
+# VERSION: with system prompt
+
 
 from utils.modelUtils import *
 from utils.utils import *
@@ -73,7 +75,6 @@ def predict_from_input(model, inp):
 ### function for intervened prompt logits / ie score
 
 # def prompt_aie
-
 
 ### CASPER ###
 
