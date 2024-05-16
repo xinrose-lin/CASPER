@@ -75,7 +75,7 @@ def prompt_tokens_ie_score(model, tokenizer, prompt, intervene_token):
     ## prompt indirect effect list 
     prompt_ie_list = [abs(ref_prob[1].item() - x[1].item()) for x in prompt_logits_list]
 
-    return prompt_ie_list
+    return prompt_logits_list, prompt_ie_list
 
 
 ## load model 
@@ -104,15 +104,16 @@ for i in range(len(harmful_prompts)):
     # print('original pred, p', (pred, p))
     
     ## prompt logits with intervened token
-    prompt_tokens_ie_list = prompt_tokens_ie_score(model, tokenizer, harmful_prompts[i], '-')
+    prompt_tokens_logits_list, prompt_tokens_ie_list = prompt_tokens_ie_score(model, tokenizer, harmful_prompts[i], '-')
     
     print(prompt_tokens_ie_list)
 
     harmful_responses[harmful_prompts[i]] = {'response': generated_text}
     harmful_responses[harmful_prompts[i]]['prompt_ie_score'] = prompt_tokens_ie_list
+    harmful_responses[harmful_prompts[i]]['prompt_logits'] = prompt_tokens_logits_list
     
     # print(harmful_responses)
-    with open('harmful_data_w_ie_score.json', 'w') as json_file:
+    with open('harmful_data_w_scores.json', 'w') as json_file:
         json.dump(harmful_responses, json_file, indent=4)   
 
     print('\n\n saved response')
@@ -128,22 +129,16 @@ for i in range(len(harmful_prompts)):
     print(f'adversarial prompt {i}: {adv_prompts[i]}, ', generated_text)
     
     ## prompt logits with intervened token
-    prompt_tokens_ie_list = prompt_tokens_ie_score(model, tokenizer, adv_prompts[i], '-')
-    
-    print(prompt_tokens_ie_list)
+    prompt_tokens_logits_list, prompt_tokens_ie_list = prompt_tokens_ie_score(model, tokenizer, harmful_prompts[i], '-')
 
+    print(prompt_tokens_ie_list)
     adv_responses[adv_prompts[i]] = {'response': generated_text}
     adv_responses[adv_prompts[i]]['prompt_ie_score'] = prompt_tokens_ie_list
+    adv_responses[adv_prompts[i]]['prompt_logits'] = prompt_tokens_logits_list
     
     # print(adv_responses)
-    with open('adversarial_data_w_ie_score.json', 'w') as json_file:
+    with open('adversarial_data_w_scores.json', 'w') as json_file:
         json.dump(adv_responses, json_file, indent=4)  
 
     print('\n\n saved response') 
-    
-#### 1. get logits for these prompts 
 
-
-#### 2. change the token (from the last token onwards)
-# <prompt> : promptv1 : logits, promptv2 : logits, promptv3 : logits ... 
-# AIE for this prompt 
