@@ -109,29 +109,37 @@ for i in range(len(harmful_prompts)):
     print(prompt_tokens_ie_list)
 
     harmful_responses[harmful_prompts[i]] = {'response': generated_text}
-    harmful_responses[harmful_prompts[i]]['prompt_ie_score'] = prompt_tokens_ie_score
+    harmful_responses[harmful_prompts[i]]['prompt_ie_score'] = prompt_tokens_ie_list
     
-
+    # print(harmful_responses)
     with open('harmful_data_w_ie_score.json', 'w') as json_file:
         json.dump(harmful_responses, json_file, indent=4)   
 
-    break 
-
-    print('saved response')
+    print('\n\n saved response')
+    
+    ### adv data
 
     inputs = tokenizer(adv_prompts[i], return_tensors="pt")
     inputs.to("cuda")
 
+    ## response
     outputs = model.generate(**inputs)
     generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
-    print(f'Adversarial prompt {i}: {adv_prompts[i]}', generated_text)
-
-    adv_responses[adv_prompts[i]] = generated_text
-
-    with open('adv_data.json', 'w') as json_file:
-        json.dump(adv_responses, json_file, indent=4)    
+    print(f'adversarial prompt {i}: {adv_prompts[i]}, ', generated_text)
     
-    print('saved response')
+    ## prompt logits with intervened token
+    prompt_tokens_ie_list = prompt_tokens_ie_score(model, tokenizer, adv_prompts[i], '-')
+    
+    print(prompt_tokens_ie_list)
+
+    adv_responses[adv_prompts[i]] = {'response': generated_text}
+    adv_responses[adv_prompts[i]]['prompt_ie_score'] = prompt_tokens_ie_list
+    
+    # print(adv_responses)
+    with open('adversarial_data_w_ie_score.json', 'w') as json_file:
+        json.dump(adv_responses, json_file, indent=4)  
+
+    print('\n\n saved response') 
     
 #### 1. get logits for these prompts 
 
