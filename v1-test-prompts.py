@@ -113,7 +113,7 @@ for i in range(len(harmful_prompts)):
     harmful_responses[harmful_prompts[i]]['prompt_logits'] = prompt_tokens_logits_list
     
     # print(harmful_responses)
-    with open('harmful_data_w_scores.json', 'w') as json_file:
+    with open('data/harmful_data_w_scores.json', 'w') as json_file:
         json.dump(harmful_responses, json_file, indent=4)   
 
     print('\n\n saved response')
@@ -137,7 +137,7 @@ for i in range(len(harmful_prompts)):
     adv_responses[adv_prompts[i]]['prompt_logits'] = prompt_tokens_logits_list
     
     # print(adv_responses)
-    with open('adversarial_data_w_scores.json', 'w') as json_file:
+    with open('data/adversarial_data_w_scores.json', 'w') as json_file:
         json.dump(adv_responses, json_file, indent=4)  
 
     print('\n\n saved response') 
